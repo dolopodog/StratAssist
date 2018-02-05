@@ -168,7 +168,7 @@ $stamp = [int][double]::parse((Get-Date -UFormat %s))
 
 $fin | Select-Object Game,Username,Date,Time,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,WinningPlayer,WinningHero,WinningCondition | Export-Csv -NoTypeInformation "$($fin.Username[0])-$stamp.csv"
 
-Write-Host "`n`nResults Saved To $($fin.Username[0])-$stamp.csv" #endregion
+Write-Host "`n`nResults Saved To $($fin.Username)-$stamp.csv" #endregion
 
 #region Calculate and display game statistics
 Write-Host "`n`nGame Statistics"
