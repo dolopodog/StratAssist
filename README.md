@@ -1,5 +1,5 @@
 # StratAssist
-*A script for parsing Armello log files, to find game statistics and player strategies.*
+*A script for parsing Armello's log files, to find game statistics and player strategies.*
 
 **Usage**
 
