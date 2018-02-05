@@ -1,7 +1,7 @@
 <#
 StratAssist V1.0
 
-A script for parsing Armello log files to find game statistics and player strategies.
+A script for parsing Armello's log files to find game statistics and player strategies.
 
     Copyright (C) 2018  Dolop O'Dog
 
@@ -155,7 +155,7 @@ ForEach ($i in 0..($total-$drop-1)){
             $tmp += [ordered]@{
                 'WinningPlayer' = [regex]::matches($fix[$k].context.postcontext[1],'(?<=Winner.*Player.).*(?=.\(Player.\))') | %{$_.value}
                 'WinningHero' = [regex]::matches($fix[$k].context.postcontext[1],'(?<=Winner.*Hero.).*(?=.\(\d{4}\))') | %{$_.value} | Id-ToPlaintext
-                'WinCondition' = [regex]::matches($fix[$k].context.postcontext[2],'(?<=GameVictoryType..).*') | %{$_.value} | Id-ToPlaintext
+                'WinningCondition' = [regex]::matches($fix[$k].context.postcontext[2],'(?<=GameVictoryType..).*') | %{$_.value} | Id-ToPlaintext
                 'Username' = [regex]::matches($fix[$k].filename,'^.*(?=_log)') | %{$_.value}
                 'Date' = [regex]::matches($fix[$k].filename,'\d{4}-\d{2}-\d{2}') | %{$_.value}
                 'Time' = [regex]::matches($fix[$k].line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}
@@ -166,7 +166,7 @@ ForEach ($i in 0..($total-$drop-1)){
 #region Create a CSV file
 $stamp = [int][double]::parse((Get-Date -UFormat %s))
 
-$fin | Select-Object Game,Username,Date,Time,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,WinningPlayer,WinningHero,WinCondition | Export-Csv -NoTypeInformation "$($fin.Username[0])-$stamp.csv"
+$fin | Select-Object Game,Username,Date,Time,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,WinningPlayer,WinningHero,WinningCondition | Export-Csv -NoTypeInformation "$($fin.Username[0])-$stamp.csv"
 
 Write-Host "`n`nResults Saved To $($fin.Username[0])-$stamp.csv" #endregion
 
