@@ -143,13 +143,13 @@ ForEach ($i in 0..($total-$drop-1)){
         If ($fix[$k].line -like '*Creature Equipping Signet*' -and $skip -eq 0){
             $tmp += [ordered]@{
                 'Signet1' = [regex]::matches($fix[$k].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet1' = [regex]::matches($fix[$k].context.postcontext[1..2],'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
+                'Amulet1' = [regex]::matches($fix[$k].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
                 'Signet2' = [regex]::matches($fix[$k+1].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet2' = [regex]::matches($fix[$k+1].context.postcontext[1..2],'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
+                'Amulet2' = [regex]::matches($fix[$k+1].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
                 'Signet3' = [regex]::matches($fix[$k+2].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet3' = [regex]::matches($fix[$k+2].context.postcontext[1..2],'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
+                'Amulet3' = [regex]::matches($fix[$k+2].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
                 'Signet4' = [regex]::matches($fix[$k+3].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet4' = [regex]::matches($fix[$k+3].context.postcontext[1..2],'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext}
+                'Amulet4' = [regex]::matches($fix[$k+3].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext}
             $skip++}
         If ($fix[$k].line -like '*End Game*'){
             $tmp += [ordered]@{
