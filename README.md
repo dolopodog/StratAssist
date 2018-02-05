@@ -13,7 +13,7 @@ On execution, StratAssist will locate Armello's log folder and begin reading the
 
 * Game number, type, and identifier
 * Board seed, and tile counts
-* Competitor usernames, hero choices, and loadout
+* Competitor usernames, hero choices, and loadout (In turn order)
 * Winning player, hero, and condition
 
 Finally, StratAssist will calculate and display local game statistics. These include the win rate and number of games played, won, lost, or dropped.
