@@ -19,46 +19,43 @@ A script for parsing Armello's log files to find game statistics and player stra
     along with this program.  If not, see <https://www.gnu.org/licenses/
 #>
 
-#region Set variables
-Set-Variable total,drop,skip 0
-
-Set-Variable order,fin @() #endregion
-
 #region Read log files
 $path = "$env:appdata\..\LocalLow\League of Geeks\Armello\logs\*M.txt"
 
-$raw = Get-ChildItem $path | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,13 'Begin Match','Load Game','Setup Game','MapMaking: None:','Creature Equipping Signet','End Game' #endregion
+$raw = Get-ChildItem $path | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,13 'Begin Match','Setup Game','MapMaking: None:','Creature Equipping Signet','ravens = 0.1111111','Start Game','End Game' #endregion
 
+$total = 0
+$drop = 0
 $fix = ForEach ($i in 0..($raw.count-1)){
-    If ($raw[$i].line -like '*Begin Match*'){
-        If ($raw[$i+8].line -like '*End Game*'){
-            $raw[$i..($i+8)]}
+    If ($raw[$i].line -match 'Begin Match'){
+        If ($raw[$i+9].line -match 'End Game'){
+            $raw[$i..($i+9)]}
         Else{
             $drop++}
         $total++}} #Disregard unfinished games; Count total games played and number of disconnects
 
 Function Id-ToPlaintext($input){
     $input | %{$_ `
-        -replace 'Bandit01|0x94B1BC41',"Twiss" `
-        -replace 'Bandit02|0x94B1BC42',"Sylas" `
-        -replace 'Bandit03|0x94B1BC43',"Horace" `
-        -replace 'Bandit04|0x94B1BC44',"Scarlet" `
-        -replace 'Bear01|0x765CE8D5',"Sana" `
-        -replace 'Bear02|0x765CE8D6',"Brun" `
-        -replace 'Bear03|0x765CE8D7',"Ghor" `
-        -replace 'Bear04|0x765CE8D8',"Yordana" `
-        -replace 'Rabbit01|0xFE2E33BB',"Amber" `
-        -replace 'Rabbit02|0xFE2E33BC',"Barnaby" `
-        -replace 'Rabbit03|0xFE2E33BD',"Elyssia" `
-        -replace 'Rabbit04|0xFE2E33BE',"Hargrave" `
-        -replace 'Rat01|0x04B158C6',"Mercurio" `
-        -replace 'Rat02|0x04B158C7',"Zosha" `
-        -replace 'Rat03|0x04B158C8',"Sargon" `
-        -replace 'Rat04|0x04B158C9','Griotte' `
-        -replace 'Wolf01|0x9AC46BF3',"Thane" `
-        -replace 'Wolf02|0x9AC46BF4',"River" `
-        -replace 'Wolf03|0x9AC46BF5',"Magna" `
-        -replace 'Wolf04|0x9AC46BF6','Fang' `
+        -replace 'Bandit01',"Twiss" `
+        -replace 'Bandit02',"Sylas" `
+        -replace 'Bandit03',"Horace" `
+        -replace 'Bandit04',"Scarlet" `
+        -replace 'Bear01',"Sana" `
+        -replace 'Bear02',"Brun" `
+        -replace 'Bear03',"Ghor" `
+        -replace 'Bear04',"Yordana" `
+        -replace 'Rabbit01',"Amber" `
+        -replace 'Rabbit02',"Barnaby" `
+        -replace 'Rabbit03',"Elyssia" `
+        -replace 'Rabbit04',"Hargrave" `
+        -replace 'Rat01',"Mercurio" `
+        -replace 'Rat02',"Zosha" `
+        -replace 'Rat03',"Sargon" `
+        -replace 'Rat04',"Griotte" `
+        -replace 'Wolf01',"Thane" `
+        -replace 'Wolf02',"River" `
+        -replace 'Wolf03',"Magna" `
+        -replace 'Wolf04',"Fang" `
         -replace 'SIG01',"Black Opal" `
         -replace 'SIG02',"Obsidian" `
         -replace 'SIG03',"Ruby" `
@@ -105,76 +102,70 @@ Function Id-ToPlaintext($input){
         -replace 'BanishKing',"Spirit Stone" `
         -replace 'DefeatKing',"King Slayer"}} #Replace variables with plaintext names
 
-ForEach ($i in $fix){
-    If ($i -like '*Creature Equipping Signet*'){
-        $order += [regex]::matches($i.context.postcontext[0],'(?<=Player)\d') | %{$_.value}}} #Determine turn order
+$fin = @()
+ForEach($i in 0..($total-$drop-1)){
 
-ForEach ($i in 0..($total-$drop-1)){
-    $tmp = [ordered]@{
-        'Game' = $i+1}
-    ForEach ($j in 0..8){
-        $k = $i*9+$j
-        if ($fix[$k].line -like '*Begin Match*'){
+$tmp = [ordered]@{"Game" = $i+1}
+$b = 1
+
+    ForEach($j in $fix[($i*10)..($i*10+9)]){
+
+        If ($j.line -match 'Begin Match'){
             $tmp += [ordered]@{
-                'Mode' = [regex]::matches($fix[$k].context.postcontext[0],'(?<=Mode:\s).*') | %{$_.value}
-                'GameId' = [regex]::matches($fix[$k].context.postcontext,'(?<=GameId:\s).*?(?= )') | %{$_.value}}}
-        if ($fix[$k].line -like '*Load Game*'){
+                "Mode" = [regex]::matches($j.context.postcontext[0],'(?<=Mode: ).*') | %{$_.value}}}
+
+        If ($j.line -match 'Setup Game'){
             $tmp += [ordered]@{
-                'Player1' = [regex]::matches($fix[$k].context.postcontext[$order[$i*4]],'(?<=Name:.*)\S.*(?=,\sNetwork)') | %{$_.value}
-                'Hero1' = [regex]::matches($fix[$k].context.postcontext[$order[$i*4]],'(?<=Hero:.*)\S.*') | %{$_.value} | Id-ToPlaintext
-                'Player2' = [regex]::matches($fix[$k].context.postcontext[$order[($i*4)+1]],'(?<=Name:.*)\S.*(?=,\sNetwork)') | %{$_.value}
-                'Hero2' = [regex]::matches($fix[$k].context.postcontext[$order[($i*4)+1]],'(?<=Hero:.*)\S.*') | %{$_.value} | Id-ToPlaintext
-                'Player3' = [regex]::matches($fix[$k].context.postcontext[$order[($i*4)+2]],'(?<=Name:.*)\S.*(?=,\sNetwork)') | %{$_.value}
-                'Hero3' = [regex]::matches($fix[$k].context.postcontext[$order[($i*4)+2]],'(?<=Hero:.*)\S.*') | %{$_.value} | Id-ToPlaintext
-                'Player4' = [regex]::matches($fix[$k].context.postcontext[$order[($i*4)+3]],'(?<=Name:.*)\S.*(?=,\sNetwork)') | %{$_.value}
-                'Hero4' = [regex]::matches($fix[$k].context.postcontext[$order[($i*4)+3]],'(?<=Hero:.*)\S.*') | %{$_.value} | Id-ToPlaintext}}
-        if ($fix[$k].line -like '*Setup Game*'){
+                "Seed" = [regex]::matches($j.context.postcontext[0],'(?<=Seed: ).*') | %{$_.value}}}
+
+        If ($j.line -match 'MapMaking: None:'){
             $tmp += [ordered]@{
-                'Seed' = [regex]::matches($fix[$k].context.postcontext[0],'(?<=Seed:\s).*') | %{$_.value}}}
-        If ($fix[$k].line -like '*Mapmaking*'){
+                "Plains" = [regex]::matches($j.context.postcontext[0],'(?<=MapMaking: Plains: )\d.*') | %{$_.value}
+                "Swamps" = [regex]::matches($j.context.postcontext[1],'(?<=MapMaking: Swamp: )\d.*') | %{$_.value}
+                "Forests" = [regex]::matches($j.context.postcontext[2],'(?<=MapMaking: Forest: )\d.*') | %{$_.value}
+                "Mountains" = [regex]::matches($j.context.postcontext[3],'(?<=MapMaking: Mountains: )\d.*') | %{$_.value}
+                "StoneCircles" = [regex]::matches($j.context.postcontext[4],'(?<=MapMaking: StoneCircle: )\d.*') | %{$_.value}
+                "Settlements" = [regex]::matches($j.context.postcontext[5],'(?<=MapMaking: Settlement: )\d.*') | %{$_.value}
+                "Dungeons" = [regex]::matches($j.context.postcontext[6],'(?<=MapMaking: Dungeon: )\d.*') | %{$_.value}}}
+
+        If ($j.line -match 'ravens = 0.1111111'){
+            ForEach($a in 1..4){
+                $tmp += [ordered]@{
+                    "Player$a" = [regex]::matches($j.context.postcontext[$a*3],'(?<=Player: Init Player ).*') | %{$_.value}
+                    "Hero$a" = [regex]::matches($j.context.postcontext[$a*3-2],'(?<=for ).*\d{2}') | %{$_.value} | Id-ToPlaintext}}}
+
+        If ($j.line -match 'Start Game'){
             $tmp += [ordered]@{
-                'Plains' = [regex]::matches($fix[$k].context.postcontext[0],'(?<=MapMaking.*)\d.*') | %{$_.value}
-                'Swamps' = [regex]::matches($fix[$k].context.postcontext[1],'(?<=MapMaking.*)\d.*') | %{$_.value}
-                'Forests' = [regex]::matches($fix[$k].context.postcontext[2],'(?<=MapMaking.*)\d.*') | %{$_.value}
-                'Mountains' = [regex]::matches($fix[$k].context.postcontext[3],'(?<=MapMaking.*)\d.*') | %{$_.value}
-                'StoneCircles' = [regex]::matches($fix[$k].context.postcontext[4],'(?<=MapMaking.*)\d.*') | %{$_.value}
-                'Settlements' = [regex]::matches($fix[$k].context.postcontext[5],'(?<=MapMaking.*)\d.*') | %{$_.value}
-                'Dungeons' = [regex]::matches($fix[$k].context.postcontext[6],'(?<=MapMaking.*)\d.*') | %{$_.value}}}
-        If ($fix[$k].line -like '*Creature Equipping Signet*' -and $skip -eq 0){
+                "GameId" = [regex]::matches($j.context.postcontext,'(?<=GameId: ).*?(?= )') | %{$_.value}}}
+
+        If ($j.line -match 'End Game'){
             $tmp += [ordered]@{
-                'Signet1' = [regex]::matches($fix[$k].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet1' = [regex]::matches($fix[$k].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
-                'Signet2' = [regex]::matches($fix[$k+1].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet2' = [regex]::matches($fix[$k+1].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
-                'Signet3' = [regex]::matches($fix[$k+2].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet3' = [regex]::matches($fix[$k+2].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext
-                'Signet4' = [regex]::matches($fix[$k+3].line,'(?<=Signet:\s).*') | %{$_.value} | Id-ToPlaintext
-                'Amulet4' = [regex]::matches($fix[$k+3].context.postcontext,'(?<=Amulet:\s).*?(?=\s)') | %{$_.value} | Id-ToPlaintext}
-            $skip++}
-        If ($fix[$k].line -like '*End Game*'){
+                "Winner" = [regex]::matches($j.context.postcontext[1],'(?<=Winner: \[Player ).*(?= \(Player.\))') | %{$_.value}
+                "WinCondition" = [regex]::matches($j.context.postcontext[2],'(?<=GameVictoryType: ).*') | %{$_.value} | Id-ToPlaintext
+                "Username" = [regex]::matches($j.filename,'^.*(?=_log)') | %{$_.value}
+                "EndDate" = [regex]::matches($j.filename,'\d{4}-\d{2}-\d{2}') | %{$_.value}
+                "EndTime" = [regex]::matches($j.line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}}
+
+        If ($j.line -match 'Creature Equipping Signet'){
             $tmp += [ordered]@{
-                'WinningPlayer' = [regex]::matches($fix[$k].context.postcontext[1],'(?<=Winner.*Player.).*(?=.\(Player.\))') | %{$_.value}
-                'WinningHero' = [regex]::matches($fix[$k].context.postcontext[1],'(?<=Winner.*Hero.).*(?=.\(\d{4}\))') | %{$_.value} | Id-ToPlaintext
-                'WinningCondition' = [regex]::matches($fix[$k].context.postcontext[2],'(?<=GameVictoryType..).*') | %{$_.value} | Id-ToPlaintext
-                'Username' = [regex]::matches($fix[$k].filename,'^.*(?=_log)') | %{$_.value}
-                'Date' = [regex]::matches($fix[$k].filename,'\d{4}-\d{2}-\d{2}') | %{$_.value}
-                'Time' = [regex]::matches($fix[$k].line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}
-            $skip--}}
-    $fin += @(New-Object PSObject -Property $tmp)
-} #Parse data from objects into table entries
+                "Signet$b" = [regex]::matches($j.line,'(?<=Signet: ).*') | %{$_.value} | Id-ToPlaintext
+                "Amulet$b" = [regex]::matches($j.context.postcontext,'(?<=Amulet: ).*?(?= )') | %{$_.value} | Id-ToPlaintext}
+            $b++}}
+
+$fin += @(New-Object PSObject -Property $tmp)}
 
 #region Create a CSV file
 $stamp = [int][double]::parse((Get-Date -UFormat %s))
 
-$fin | Select-Object Game,Username,Date,Time,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,WinningPlayer,WinningHero,WinningCondition | Export-Csv -NoTypeInformation "$($fin.Username[0])-$stamp.csv"
+$fin | Select-Object Game,EndDate,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$($fin.Username[0])-$stamp.csv"
 
-Write-Host "`n`nResults Saved To $($fin.Username)-$stamp.csv" #endregion
+Write-Host "`n`nResults Saved To $($fin.Username[0])-$stamp.csv" #endregion
 
 #region Calculate and display game statistics
 Write-Host "`n`nGame Statistics"
 
-$userwon = (0..($fin.count-1) | Where {$fin.WinningPlayer[$_] -eq $fin.Username[$_]}).count
-$serverwon = (0..($fin.count-1) | Where {$fin.WinningPlayer[$_] -ne $fin.Username[$_]}).count
+$userwon = (0..($fin.count-1) | Where {$fin.Winner[$_] -eq $fin.Username[$_]}).count
+$serverwon = (0..($fin.count-1) | Where {$fin.Winner[$_] -ne $fin.Username[$_]}).count
 
 $stats = New-Object -TypeName PSObject -Property ([ordered]@{
     'Played' = $total
