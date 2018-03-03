@@ -3,11 +3,11 @@
 
 **Usage**
 
-Download the StratAssist zip, and extract StratAssist.ps1 to a folder of your choice
+Download the StratAssist zip, and extract the StratAssist-master folder to a location of your choice
 
 Open the "Run" dialog box, by pressing the Windows Key+R
 
-In the dialogue, type "PowerShell -ExecutionPolicy Bypass" and hit Enter
+In the dialogue, type "PowerShell -ExecutionPolicy Unrestricted" and hit Enter
 
 A PowerShell window will open. Drag and drop StratAssist.ps1 into the window and hit Enter
 
