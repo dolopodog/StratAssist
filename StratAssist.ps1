@@ -19,6 +19,8 @@ A script for parsing Armello's log files to find game statistics and player stra
     along with this program.  If not, see <https://www.gnu.org/licenses/
 #>
 
+$curpath = Split-Path -parent $PSCommandPath
+
 #region Read log files
 $path = "$env:appdata\..\LocalLow\League of Geeks\Armello\logs\*M.txt"
 
@@ -157,9 +159,9 @@ $fin += @(New-Object PSObject -Property $tmp)}
 #region Create a CSV file
 $stamp = [int][double]::parse((Get-Date -UFormat %s))
 
-$fin | Select-Object Game,EndDate,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$($fin.Username[0])-$stamp.csv"
+$fin | Select-Object Game,EndDate,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$curpath\$($fin.Username[0])-$stamp.csv"
 
-Write-Host "`n`nResults Saved To $($fin.Username[0])-$stamp.csv" #endregion
+Write-Host "`n`nResults Saved To $curpath\$($fin.Username[0])-$stamp.csv" #endregion
 
 #region Calculate and display game statistics
 Write-Host "`n`nGame Statistics"
