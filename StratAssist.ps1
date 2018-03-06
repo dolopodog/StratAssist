@@ -25,10 +25,10 @@ Param([switch]$adv)
 $curdir = Split-Path -parent $PSCommandPath
 $logdir = "$env:appdata\..\LocalLow\League of Geeks\Armello\logs\*M.txt"
 If ($adv -eq $true){
-    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,13 'Begin Match','Setup Game','MapMaking: None:','Creature Equipping Signet','Loading .* Board map','Start Game','End Game'
+    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,14 'Begin Match','Setup Game','MapMaking: None:','Creature Equipping Signet','Loading .* Board map','Start Game','End Game'
     $offset = 9}
 Else{
-    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,13 'Begin Match','End Game'
+    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,14 'Begin Match','End Game'
     $offset = 1} #endregion
 
 $total = 0
