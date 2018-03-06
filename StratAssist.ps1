@@ -1,42 +1,32 @@
 <#
-StratAssist V1.1
-
+StratAssist V1.0
 A script for parsing Armello's log files to find game statistics and player strategies.
-
     Copyright (C) 2018  Dolop O'Dog
-
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/
 #>
 
-Param([switch]$adv)
+$curpath = Split-Path -parent $PSCommandPath
 
 #region Read log files
-$curdir = Split-Path -parent $PSCommandPath
-$logdir = "$env:appdata\..\LocalLow\League of Geeks\Armello\logs\*M.txt"
-If ($adv -eq $true){
-    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,14 'Begin Match','Setup Game','MapMaking: None:','Creature Equipping Signet','Loading .* Board map','Start Game','End Game'
-    $offset = 9}
-Else{
-    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,14 'Begin Match','End Game'
-    $offset = 1} #endregion
+$path = "$env:appdata\..\LocalLow\League of Geeks\Armello\logs\*M.txt"
+
+$raw = Get-ChildItem $path | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,13 'Begin Match','Setup Game','MapMaking: None:','Creature Equipping Signet','ravens = 0.1111111','Start Game','End Game' #endregion
 
 $total = 0
 $drop = 0
 $fix = ForEach ($i in 0..($raw.count-1)){
     If ($raw[$i].line -match 'Begin Match'){
-        If ($raw[$i+$offset].line -match 'End Game'){
-            $raw[$i..($i+$offset)]}
+        If ($raw[$i+9].line -match 'End Game'){
+            $raw[$i..($i+9)]}
         Else{
             $drop++}
         $total++}} #Disregard unfinished games; Count total games played and number of disconnects
@@ -111,15 +101,20 @@ Function Id-ToPlaintext($input){
 
 $fin = @()
 ForEach($i in 0..($total-$drop-1)){
+
 $tmp = [ordered]@{"Game" = $i+1}
 $b = 1
-    ForEach($j in $fix[($i*($offset+1))..($i*($offset+1)+$offset)]){
+
+    ForEach($j in $fix[($i*10)..($i*10+9)]){
+
         If ($j.line -match 'Begin Match'){
             $tmp += [ordered]@{
                 "Mode" = [regex]::matches($j.context.postcontext[0],'(?<=Mode: ).*') | %{$_.value}}}
+
         If ($j.line -match 'Setup Game'){
             $tmp += [ordered]@{
                 "Seed" = [regex]::matches($j.context.postcontext[0],'(?<=Seed: ).*') | %{$_.value}}}
+
         If ($j.line -match 'MapMaking: None:'){
             $tmp += [ordered]@{
                 "Plains" = [regex]::matches($j.context.postcontext[0],'(?<=MapMaking: Plains: )\d.*') | %{$_.value}
@@ -129,14 +124,17 @@ $b = 1
                 "StoneCircles" = [regex]::matches($j.context.postcontext[4],'(?<=MapMaking: StoneCircle: )\d.*') | %{$_.value}
                 "Settlements" = [regex]::matches($j.context.postcontext[5],'(?<=MapMaking: Settlement: )\d.*') | %{$_.value}
                 "Dungeons" = [regex]::matches($j.context.postcontext[6],'(?<=MapMaking: Dungeon: )\d.*') | %{$_.value}}}
-        If ($j.line -match 'Loading .* Board map'){
+
+        If ($j.line -match 'ravens = 0.1111111'){
             ForEach($a in 1..4){
                 $tmp += [ordered]@{
                     "Player$a" = [regex]::matches($j.context.postcontext[$a*3],'(?<=Player: Init Player ).*') | %{$_.value}
                     "Hero$a" = [regex]::matches($j.context.postcontext[$a*3-2],'(?<=for ).*\d{2}') | %{$_.value} | Id-ToPlaintext}}}
+
         If ($j.line -match 'Start Game'){
             $tmp += [ordered]@{
                 "GameId" = [regex]::matches($j.context.postcontext,'(?<=GameId: ).*?(?= )') | %{$_.value}}}
+
         If ($j.line -match 'End Game'){
             $tmp += [ordered]@{
                 "Winner" = [regex]::matches($j.context.postcontext[1],'(?<=Winner: \[Player ).*(?= \(Player.\))') | %{$_.value}
@@ -144,27 +142,35 @@ $b = 1
                 "Username" = [regex]::matches($j.filename,'^.*(?=_log)') | %{$_.value}
                 "EndDate" = [regex]::matches($j.filename,'\d{4}-\d{2}-\d{2}') | %{$_.value}
                 "EndTime" = [regex]::matches($j.line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}}
+
         If ($j.line -match 'Creature Equipping Signet'){
             $tmp += [ordered]@{
                 "Signet$b" = [regex]::matches($j.line,'(?<=Signet: ).*') | %{$_.value} | Id-ToPlaintext
                 "Amulet$b" = [regex]::matches($j.context.postcontext,'(?<=Amulet: ).*?(?= )') | %{$_.value} | Id-ToPlaintext}
             $b++}}
-$fin += @(New-Object PSObject -Property $tmp)} #Parse Game-Play Statistics
 
-If ($adv -eq $true){
-    $stamp = [int][double]::parse((Get-Date -UFormat %s))
-    $fin | Select-Object Game,EndDate,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$curdir\$($fin.Username[0])-$stamp.csv"
-    Write-Host "`n`nResults Saved To $curdir\$($fin.Username[0])-$stamp.csv"} #Create a CSV file
+$fin += @(New-Object PSObject -Property $tmp)}
+
+#region Create a CSV file
+$stamp = [int][double]::parse((Get-Date -UFormat %s))
+
+$fin | Select-Object Game,EndDate,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$curpath\$($fin.Username[0])-$stamp.csv"
+
+Write-Host "`n`nResults Saved To $curpath\$($fin.Username[0])-$stamp.csv" #endregion
 
 #region Calculate and display game statistics
 Write-Host "`n`nGame Statistics"
+
 $userwon = (0..($fin.count-1) | Where {$fin.Winner[$_] -eq $fin.Username[$_]}).count
 $serverwon = (0..($fin.count-1) | Where {$fin.Winner[$_] -ne $fin.Username[$_]}).count
+
 $stats = New-Object -TypeName PSObject -Property ([ordered]@{
     'Played' = $total
     'Won' = $userwon
     'Lost' = $serverwon
     'Dropped' = $drop
     'Win Rate' =($userwon/($total-$drop)).tostring("P")})
+
 $stats | Format-List
+
 pause #endregion
