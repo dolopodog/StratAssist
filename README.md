@@ -24,4 +24,4 @@ When run in Advanced mode, StratAssist will also output a CSV spreadsheet contai
 * Game number, type, and identifier
 * Board seed, and tile counts
 * Competitor usernames, hero choices, and loadout (In turn order)
-* Winning player, hero, and condition
+* Winning player, and condition
