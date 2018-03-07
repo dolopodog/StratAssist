@@ -9,7 +9,7 @@ Open the "Run" dialog box, by pressing the Windows Key+R
 
 In the dialogue, type "PowerShell -ExecutionPolicy Bypass" and hit Enter
 
-A PowerShell window will open. Drag and drop StratAssist.ps1 into the window
+A PowerShell window will open, drag and drop StratAssist.ps1 into the window
 
 From here, StratAssist can be run in Basic or Advanced mode.
 * To run in Basic mode, hit Enter
