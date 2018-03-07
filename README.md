@@ -3,7 +3,7 @@
 
 **Usage**
 
-Download the StratAssist zip, and extract the StratAssist-master folder to a location of your choice. Avoiding directories with spaces in their names makes the following steps easier.
+Download the StratAssist zip, and extract the StratAssist-master folder to a location of your choice (Avoid directories with spaces in their names to make the following steps easier)
 
 Open the "Run" dialog box, by pressing the Windows Key+R
 
