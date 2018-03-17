@@ -19,7 +19,7 @@ From here, StratAssist can be run in Basic or Advanced mode
 
 On execution, StratAssist will locate Armello's log folder and begin reading the log files. Upon completion, it will calculate and display local game statistics. These include the win rate and number of games played, won, lost, or dropped.
 
-When run in Advanced mode, StratAssist will also output a CSV spreadsheet containing data from all logged online multiplayer games. The spreadsheet includes:
+When run in Advanced mode, StratAssist will also output a CSV spreadsheet containing data from all compatible logged online multiplayer games. The spreadsheet includes:
 
 * Game number, type, and identifier
 * Board seed, and tile counts
