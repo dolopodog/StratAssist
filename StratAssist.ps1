@@ -106,6 +106,8 @@ Function Id-ToPlaintext($input){
         -replace 'AMU12',"Discipline" `
         -replace 'AMU13',"Resist" `
         -replace 'AMU14',"Intimidate" `
+        -replace 'AMU15',"Harmonise" `
+        -replace 'AMU16',"Decay" `
         -replace 'BanishKing',"Spirit Stone" `
         -replace 'DefeatKing',"King Slayer"}} #Replace variables with plaintext names
 
