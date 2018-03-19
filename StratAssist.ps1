@@ -1,5 +1,5 @@
 <#
-StratAssist V1.1
+StratAssist V1.11
 
 A script for parsing Armello's log files to find game statistics and player strategies.
 
@@ -118,7 +118,9 @@ $b = 1
     ForEach($j in $fix[($i*($offset+1))..($i*($offset+1)+$offset)]){
         If ($j.line -match 'Begin Match'){
             $tmp += [ordered]@{
-                "Mode" = [regex]::matches($j.context.postcontext[0],'(?<=Mode: ).*') | %{$_.value}}}
+                "Mode" = [regex]::matches($j.context.postcontext[0],'(?<=Mode: ).*') | %{$_.value}
+                "Date" = [regex]::matches($j.filename,'\d{4}-\d{2}-\d{2}') | %{$_.value}
+                "StartTime" = [regex]::matches($j.line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}}
         If ($j.line -match 'Setup Game'){
             $tmp += [ordered]@{
                 "Seed" = [regex]::matches($j.context.postcontext[0],'(?<=Seed: ).*') | %{$_.value}}}
@@ -144,7 +146,6 @@ $b = 1
                 "Winner" = [regex]::matches($j.context.postcontext[1],'(?<=Winner: \[Player ).*(?= \(Player.\))') | %{$_.value}
                 "WinCondition" = [regex]::matches($j.context.postcontext[2],'(?<=GameVictoryType: ).*') | %{$_.value} | Id-ToPlaintext
                 "Username" = [regex]::matches($j.filename,'^.*(?=_log)') | %{$_.value}
-                "EndDate" = [regex]::matches($j.filename,'\d{4}-\d{2}-\d{2}') | %{$_.value}
                 "EndTime" = [regex]::matches($j.line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}}
         If ($j.line -match 'Creature Equipping Signet'){
             $tmp += [ordered]@{
@@ -155,7 +156,7 @@ $fin += @(New-Object PSObject -Property $tmp)} #Parse game statistics
 
 If ($adv -eq $true){
     $stamp = [int][double]::parse((Get-Date -UFormat %s))
-    $fin | Select-Object Game,EndDate,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$curdir\$($fin.Username[0])-$stamp.csv"
+    $fin | Select-Object Game,Date,StartTime,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$curdir\$($fin.Username[0])-$stamp.csv"
     Write-Host "`n`nResults Saved To $curdir\$($fin.Username[0])-$stamp.csv"} #Create a CSV file
 
 #region Calculate and display game statistics
