@@ -22,7 +22,7 @@ A script for parsing Armello's log files to find game statistics and player stra
 $date = Get-Date "1/1/1970"
 $curdir = Split-Path -parent $PSCommandPath
 $curtime = (Get-Date).ToString("yyyyMMdd_HHmmss")
-$logdir = "$env:userprofile\AppData\LocalLow\League of Geeks\Armello\Accounts\68E468F3BF9AA4D4\Games\*.json"
+$logdir = $logdir = "$env:appdata\..\LocalLow\League of Geeks\Armello\Accounts\*\Games\*.json"
     $raw = Get-ChildItem $logdir | Where-Object {$_.length -gt 10000} | Sort-Object LastWriteTime -Descending
     Clear-Host
     Write-Host Found $raw.count Logs
