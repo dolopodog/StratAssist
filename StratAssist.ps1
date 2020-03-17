@@ -23,7 +23,7 @@ $date = Get-Date "1/1/1970"
 $curdir = Split-Path -parent $PSCommandPath
 $curtime = (Get-Date).ToString("yyyyMMdd_HHmmss")
 $logdir = "$env:userprofile\AppData\LocalLow\League of Geeks\Armello\Accounts\68E468F3BF9AA4D4\Games\*.json"
-    $raw = Get-ChildItem $logdir | Where-Object {$_.length -gt 10000} | Sort-Object LastWriteTime -Descending # | %{Write-Host Examining file: $_.name; $_}
+    $raw = Get-ChildItem $logdir | Where-Object {$_.length -gt 10000} | Sort-Object LastWriteTime -Descending
     Clear-Host
     Write-Host Found $raw.count Logs
 
