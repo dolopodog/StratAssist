@@ -9,19 +9,15 @@ Open the "Run" dialog box, by pressing the Windows Key+R
 
 In the dialogue, type "PowerShell -ExecutionPolicy Bypass" and hit Enter
 
-A PowerShell window will open, drag and drop StratAssist.ps1 into the window
-
-From here, StratAssist can be run in Basic or Advanced mode
-* To run in Basic mode, hit Enter
-* To run in Advanced mode, type the parameter "-a" and hit Enter
+A PowerShell window will open, drag and drop StratAssist.ps1 into the window and hit Enter
 
 **Features**
 
-On execution, StratAssist will locate Armello's log folder and begin reading the log files. Upon completion, it will calculate and display local game statistics. These include the win rate and number of games played, won, lost, or dropped.
+On execution, StratAssist will locate Armello's log folder to begin reading the log files. Upon completion, it will calculate and display local game statistics. These include the win rate and number of games played, won, and lost.
 
-When run in Advanced mode, StratAssist will also output a CSV spreadsheet containing data from all compatible logged online multiplayer games. The spreadsheet includes:
+StratAssist will also output a CSV spreadsheet containing data from all compatible logged online multiplayer games. The spreadsheet includes:
 
-* Game number, type, and identifier
-* Board seed, and tile counts
-* Competitor usernames, hero choices, and loadout (In turn order)
-* Winning player, and condition
+* Game Information (date, duration, and mode)
+* Board tile counts
+* Competitor IDs, hero choices, loadouts, and stat progression (In turn order)
+* Game results, including victory type and local wins/losses
