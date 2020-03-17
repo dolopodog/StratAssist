@@ -1,5 +1,5 @@
 <#
-StratAssist V1.11
+StratAssist V2.0
 
 A script for parsing Armello's log files to find game statistics and player strategies.
 
@@ -19,155 +19,305 @@ A script for parsing Armello's log files to find game statistics and player stra
     along with this program.  If not, see <https://www.gnu.org/licenses/
 #>
 
-Param([switch]$adv)
-
-#region Read log files
+$date = Get-Date "1/1/1970"
 $curdir = Split-Path -parent $PSCommandPath
-$logdir = "$env:appdata\..\LocalLow\League of Geeks\Armello\logs\*M.txt"
-If ($adv -eq $true){
-    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,13 'Begin Match','Setup Game','MapMaking: None:','Creature Equipping Signet','MapMaking: MapController','Start Game','End Game'
-    $offset = 9}
-Else{
-    $raw = Get-ChildItem $logdir -Exclude '*armello_log*' | %{Write-Host Examining file: $_.name; $_} | Select-String -CaseSensitive -Context 0,3 'Begin Match','End Game'
-    $offset = 1} #endregion
+$curtime = (Get-Date).ToString("yyyyMMdd_HHmmss")
+$logdir = "$env:userprofile\AppData\LocalLow\League of Geeks\Armello\Accounts\68E468F3BF9AA4D4\Games\*.json"
+    $raw = Get-ChildItem $logdir | Where-Object {$_.length -gt 10000} | Sort-Object LastWriteTime -Descending # | %{Write-Host Examining file: $_.name; $_}
+    Clear-Host
+    Write-Host Found $raw.count Logs
 
-$total = 0
-$drop = 0
-$fix = ForEach ($i in 0..($raw.count-1)){
-    If ($raw[$i].line -match 'Begin Match'){
-        If ($raw[$i+$offset].line -match 'End Game'){
-            $raw[$i..($i+$offset)]}
-        Else{
-            $drop++}
-        $total++}} #Disregard unfinished games; Count total games played and number of disconnects
+$create = New-Object System.Collections.Generic.List[System.Object]
+$start = New-Object System.Collections.Generic.List[System.Object]
+$hero = New-Object System.Collections.Generic.List[System.Object]
+$p1hero = New-Object System.Collections.Generic.List[System.Object]
+$p2hero = New-Object System.Collections.Generic.List[System.Object]
+$p3hero = New-Object System.Collections.Generic.List[System.Object]
+$p4hero = New-Object System.Collections.Generic.List[System.Object]
+$state = New-Object System.Collections.Generic.List[System.Object]
+$p1state = New-Object System.Collections.Generic.List[System.Object]
+$p2state = New-Object System.Collections.Generic.List[System.Object]
+$p3state = New-Object System.Collections.Generic.List[System.Object]
+$p4state = New-Object System.Collections.Generic.List[System.Object]
+$stats = New-Object System.Collections.Generic.List[System.Object]
+$p1stats = New-Object System.Collections.Generic.List[System.Object]
+$p2stats = New-Object System.Collections.Generic.List[System.Object]
+$p3stats = New-Object System.Collections.Generic.List[System.Object]
+$p4stats = New-Object System.Collections.Generic.List[System.Object]
+$game = New-Object System.Collections.Generic.List[System.Object]
+$compare = New-Object System.Collections.Generic.List[System.Object]
+$multi = New-Object System.Collections.Generic.List[System.Object]
+$single = New-Object System.Collections.Generic.List[System.Object]
+$table = New-Object System.Collections.Generic.List[System.Object]
 
-Function Id-ToPlaintext($input){
-    $input | %{$_ `
-        -replace 'Bandit01',"Twiss" `
-        -replace 'Bandit02',"Sylas" `
-        -replace 'Bandit03',"Horace" `
-        -replace 'Bandit04',"Scarlet" `
-        -replace 'Bear01',"Sana" `
-        -replace 'Bear02',"Brun" `
-        -replace 'Bear03',"Ghor" `
-        -replace 'Bear04',"Yordana" `
-        -replace 'Rabbit01',"Amber" `
-        -replace 'Rabbit02',"Barnaby" `
-        -replace 'Rabbit03',"Elyssia" `
-        -replace 'Rabbit04',"Hargrave" `
-        -replace 'Rat01',"Mercurio" `
-        -replace 'Rat02',"Zosha" `
-        -replace 'Rat03',"Sargon" `
-        -replace 'Rat04',"Griotte" `
-        -replace 'Wolf01',"Thane" `
-        -replace 'Wolf02',"River" `
-        -replace 'Wolf03',"Magna" `
-        -replace 'Wolf04',"Fang" `
-        -replace 'SIG01',"Black Opal" `
-        -replace 'SIG02',"Obsidian" `
-        -replace 'SIG03',"Ruby" `
-        -replace 'SIG04',"Turquoise" `
-        -replace 'SIG05',"Emerald" `
-        -replace 'SIG06',"Pink Topaz" `
-        -replace 'SIG07',"Diamond" `
-        -replace 'SIG08',"Sunstone" `
-        -replace 'SIG09',"Sapphire" `
-        -replace 'SIG10',"Moonstone" `
-        -replace 'SIG11',"Onyx" `
-        -replace 'SIG12',"Celestite" `
-        -replace 'SIG13',"Jade" `
-        -replace 'SIG14',"Quartz" `
-        -replace 'SIG15',"Amethyst" `
-        -replace 'SIG16',"Amber" `
-        -replace 'SIG17',"Tanzanite" `
-        -replace 'SIG18',"Rainbow Quartz" `
-        -replace 'SIG19',"Rubellite" `
-        -replace 'SIG20',"Aquamarine" `
-        -replace 'SIG21',"Serendibite" `
-        -replace 'SIG22',"Cat's Eye" `
-        -replace 'SIG23',"Spinel" `
-        -replace 'SIG24',"Chrysocolla" `
-        -replace 'SIG25',"Taaffeite" `
-        -replace 'SIG26',"Black Opal" `
-        -replace 'SIG27',"Pink Topaz" `
-        -replace 'SIG28',"Amethyst" `
-        -replace 'SIG29',"Celestite" `
-        -replace 'AMU01',"Scratch" `
-        -replace 'AMU02',"Soak" `
-        -replace 'AMU03',"Think" `
-        -replace 'AMU04',"Feel" `
-        -replace 'AMU05',"Grow" `
-        -replace 'AMU06',"Watch" `
-        -replace 'AMU07',"Favour" `
-        -replace 'AMU08',"Spoil" `
-        -replace 'AMU09',"Listener" `
-        -replace 'AMU10',"Dig" `
-        -replace 'AMU11',"Sprint" `
-        -replace 'AMU12',"Discipline" `
-        -replace 'AMU13',"Resist" `
-        -replace 'AMU14',"Intimidate" `
-        -replace 'AMU15',"Harmonise" `
-        -replace 'AMU16',"Decay" `
-        -replace 'BanishKing',"Spirit Stone" `
-        -replace 'DefeatKing',"King Slayer"}} #Replace variables with plaintext names
+$ofs = ' '
+$progress=0
 
-$fin = @()
-ForEach($i in 0..($total-$drop-1)){
-$tmp = [ordered]@{"Game" = $i+1}
-$b = 1
-    ForEach($j in $fix[($i*($offset+1))..($i*($offset+1)+$offset)]){
-        If ($j.line -match 'Begin Match'){
-            $tmp += [ordered]@{
-                "Mode" = [regex]::matches($j.context.postcontext[0],'(?<=Mode: ).*') | %{$_.value}
-                "Date" = [regex]::matches($j.filename,'\d{4}-\d{2}-\d{2}') | %{$_.value}
-                "StartTime" = [regex]::matches($j.line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}}
-        If ($j.line -match 'Setup Game'){
-            $tmp += [ordered]@{
-                "Seed" = [regex]::matches($j.context.postcontext[0],'(?<=Seed: ).*') | %{$_.value}}}
-        If ($j.line -match 'MapMaking: None:'){
-            $tmp += [ordered]@{
-                "Plains" = [regex]::matches($j.context.postcontext[0],'(?<=MapMaking: Plains: )\d.*') | %{$_.value}
-                "Swamps" = [regex]::matches($j.context.postcontext[1],'(?<=MapMaking: Swamp: )\d.*') | %{$_.value}
-                "Forests" = [regex]::matches($j.context.postcontext[2],'(?<=MapMaking: Forest: )\d.*') | %{$_.value}
-                "Mountains" = [regex]::matches($j.context.postcontext[3],'(?<=MapMaking: Mountains: )\d.*') | %{$_.value}
-                "StoneCircles" = [regex]::matches($j.context.postcontext[4],'(?<=MapMaking: StoneCircle: )\d.*') | %{$_.value}
-                "Settlements" = [regex]::matches($j.context.postcontext[5],'(?<=MapMaking: Settlement: )\d.*') | %{$_.value}
-                "Dungeons" = [regex]::matches($j.context.postcontext[6],'(?<=MapMaking: Dungeon: )\d.*') | %{$_.value}}}
-        If ($j.line -match 'MapMaking: MapController'){
-            ForEach($a in 1..4){
-                $tmp += [ordered]@{
-                    "Player$a" = [regex]::matches($j.context.postcontext[$a*3-1],'(?<=Player: Init Player ).*') | %{$_.value}
-                    "Hero$a" = [regex]::matches($j.context.postcontext[$a*3-3],'(?<=for ).*\d{2}') | %{$_.value} | Id-ToPlaintext}}}
-        If ($j.line -match 'Start Game'){
-            $tmp += [ordered]@{
-                "GameId" = [regex]::matches($j.context.postcontext,'(?<=GameId: ).*?(?= )') | %{$_.value}}}
-        If ($j.line -match 'End Game'){
-            $tmp += [ordered]@{
-                "Winner" = [regex]::matches($j.context.postcontext[1],'(?<=Winner: \[Player ).*(?= \(Player.\))') | %{$_.value}
-                "WinCondition" = [regex]::matches($j.context.postcontext[2],'(?<=GameVictoryType: ).*') | %{$_.value} | Id-ToPlaintext
-                "Username" = [regex]::matches($j.filename,'^.*(?=_log)') | %{$_.value}
-                "EndTime" = [regex]::matches($j.line ,'\d{1,2}:\d{2}:\d{2}') | %{$_.value}}}
-        If ($j.line -match 'Creature Equipping Signet'){
-            $tmp += [ordered]@{
-                "Signet$b" = [regex]::matches($j.line,'(?<=Signet: ).*') | %{$_.value} | Id-ToPlaintext
-                "Amulet$b" = [regex]::matches($j.context.postcontext,'(?<=Amulet: ).*?(?= )') | %{$_.value} | Id-ToPlaintext}
-            $b++}}
-$fin += @(New-Object PSObject -Property $tmp)} #Parse game statistics
+$table.clear()
 
-If ($adv -eq $true){
-    $stamp = [int][double]::parse((Get-Date -UFormat %s))
-    $fin | Select-Object Game,Date,StartTime,EndTime,Username,Mode,GameId,Seed,Plains,Swamps,Forests,Mountains,StoneCircles,Settlements,Dungeons,Player1,Hero1,Signet1,Amulet1,Player2,Hero2,Signet2,Amulet2,Player3,Hero3,Signet3,Amulet3,Player4,Hero4,Signet4,Amulet4,Winner,WinCondition | Export-Csv -NoTypeInformation "$curdir\$($fin.Username[0])-$stamp.csv"
-    Write-Host "`n`nResults Saved To $curdir\$($fin.Username[0])-$stamp.csv"} #Create a CSV file
+ForEach($i in $raw)
+{
 
-#region Calculate and display game statistics
-Write-Host "`n`nGame Statistics"
-$userwon = (0..($fin.count-1) | Where {$fin.Winner[$_] -eq $fin.Username[$_]}).count
-$serverwon = (0..($fin.count-1) | Where {$fin.Winner[$_] -ne $fin.Username[$_]}).count
-$stats = New-Object -TypeName PSObject -Property ([ordered]@{
-    'Played' = $total
-    'Won' = $userwon
-    'Lost' = $serverwon
-    'Dropped' = $drop
-    'Win Rate' =($userwon/($total-$drop)).tostring("P")})
-$stats | Format-List
-pause #endregion
+    $json = $i | Get-Content | Select-String -CaseSensitive 'SessionGame', 'HeroSelection', 'GameWon', 'GameLost', 'GameDidNotFinish',  'EndStats' | ConvertFrom-Json
+    $duration = 0
+    $turn = 0
+
+    $hero.clear()
+    $state.clear()
+    $stats.clear()
+
+    ForEach($j in $json)
+    {
+
+        If($j.EventName -eq "SessionGameCreate")
+        {
+
+            $create.clear()
+
+            $create.add([pscustomobject]@{
+                date=$date.AddSeconds($j.Time).ToLocalTime()
+                gameMode=$j.Properties.GameData.GameMode
+                matchMode=$j.Properties.GameData.MatchmakingMode
+            })
+
+        }
+
+        If($j.EventName -eq "SessionGameStart")
+        {
+
+            $start.clear()
+            
+            $start.add([pscustomobject]@{
+                plains=$j.Properties.MapData.TileCounts.Plains
+                forests=$j.Properties.MapData.TileCounts.Forest
+                dungeons=$j.Properties.MapData.TileCounts.Dungeon
+                mountains=$j.Properties.MapData.TileCounts.Mountains
+                settlements=$j.Properties.MapData.TileCounts.Settlement
+                swamps=$j.Properties.MapData.TileCounts.Swamp
+                stoneCircles=$j.Properties.MapData.TileCounts.StoneCircle
+            })
+
+        }
+
+        If($j.EventName -eq "HeroSelection")
+        {
+
+            $hero.add([pscustomobject]@{
+                heroName=$j.Properties.HeroSelectionData.HeroName
+                heroSkin=$j.Properties.HeroSelectionData.HeroSkinName
+                diceSkin=$j.Properties.HeroSelectionData.DieName
+                amulet=$j.Properties.HeroSelectionData.AmuletName
+                signet=$j.Properties.HeroSelectionData.SignetName
+                playerType=$j.Properties.PlayerType
+            })
+
+        }
+
+        If($j.EventName -eq "GameStateAchieved")
+        {
+
+            $state.add([pscustomobject]@{
+                playerType=$j.Properties.PlayerType
+                playerID=$j.Properties.PlayerNetworkID
+            })
+
+        }
+
+        If($j.EventName -match 'EndStats')
+        {
+
+            $stats.add([pscustomobject]@{
+                fight=$j.Properties.PlayerStatsData.Fight
+                body=$j.Properties.PlayerStatsData.Body
+                health=$j.Properties.PlayerStatsData.Health
+                wits=$j.Properties.PlayerStatsData.Wits
+                spirit=$j.Properties.PlayerStatsData.Spirit
+                gold=$j.Properties.PlayerStatsData.Gold
+                magic=$j.Properties.PlayerStatsData.Magic
+                rot=$j.Properties.PlayerStatsData.Rot
+                prestige=$j.Properties.PlayerStatsData.Prestige
+                settlements=$j.Properties.PlayerStatsData.Settlements
+                spiritStones=$j.Properties.PlayerStatsData.SpiritStones
+                turns=$j.Properties.PlayerStatsData.Turns
+            })
+
+        }
+
+        If($j.EventName -eq "SessionGame")
+        {
+            
+            $game.clear()
+
+            $game.add([pscustomobject]@{
+                victoryType=$j.Properties.VictoryType
+                playerWin=$j.Properties.VictoryState
+                duration=[math]::Round($j.Duration/60,2)
+            })
+
+            $duration += $game.duration
+
+        }
+
+    }
+
+    If($($stats.turns).length -gt 3)
+    {
+        $stats.turns[-4..-1] | ForEach {$turn += $_}
+    }
+
+    $p1hero.clear()
+    $p2hero.clear()
+    $p3hero.clear()
+    $p4hero.clear()
+           
+    $p1hero.add($($hero | ForEach {$i=0} {if($i++ % 4 -eq 0){$_}}))
+    $p2hero.add($($hero | ForEach {$i=1} {if($i++ % 4 -eq 0){$_}}))
+    $p3hero.add($($hero | ForEach {$i=2} {if($i++ % 4 -eq 0){$_}}))
+    $p4hero.add($($hero | ForEach {$i=3} {if($i++ % 4 -eq 0){$_}}))
+
+    $p1state.clear()
+    $p2state.clear()
+    $p3state.clear()
+    $p4state.clear()
+           
+    $p1state.add($($state | ForEach {$i=0} {if($i++ % 4 -eq 0){$_}}))
+    $p2state.add($($state | ForEach {$i=1} {if($i++ % 4 -eq 0){$_}}))
+    $p3state.add($($state | ForEach {$i=2} {if($i++ % 4 -eq 0){$_}}))
+    $p4state.add($($state | ForEach {$i=3} {if($i++ % 4 -eq 0){$_}}))
+
+    $p1stats.clear()
+    $p2stats.clear()
+    $p3stats.clear()
+    $p4stats.clear()
+
+    $p1stats.add($($stats | ForEach {$i=0} {if($i++ % 4 -eq 0){$_}}))
+    $p2stats.add($($stats | ForEach {$i=1} {if($i++ % 4 -eq 0){$_}}))
+    $p3stats.add($($stats | ForEach {$i=2} {if($i++ % 4 -eq 0){$_}}))
+    $p4stats.add($($stats | ForEach {$i=3} {if($i++ % 4 -eq 0){$_}}))
+
+    $table.add([pscustomobject]@{
+        'Date'=$create.date
+        'Game Mode'=$create.gameMode
+        'Match Mode'=$create.matchMode
+        'Turns'=($turn/4)
+        'Duration'=$duration
+        'Victory Type'=$game.victoryType
+        'Local Outcome'=$game.playerWin
+        'Plains'=$start.plains
+        'Forests'=$start.forests
+        'Dungeons'=$start.dungeons
+        'Mountains'=$start.mountains
+        'Settlements'=$start.settlements
+        'Swamps'=$start.swamps
+        'StoneCircles'=$start.stoneCircles
+        'P1 Steam ID'="$($p1state.playerID)"
+        'P1 Init Type'="$($p1hero.playerType)"
+        'P1 End Type'="$($p1state.playerType)"
+        'P1 Hero'="$($p1hero.heroName)"
+        'P1 Hero Skin'="$($p1hero.heroSkin)"
+        'P1 Dice Skin'="$($p1hero.diceSkin)"
+        'P1 Amulet'="$($p1hero.amulet)"
+        'P1 Ring'="$($p1hero.signet)"
+        'P1 Fight'="$($p1stats.fight)"
+        'P1 Health'="$($p1stats.health)"
+        'P1 Body'="$($p1stats.body)"
+        'P1 Wits'="$($p1stats.wits)"
+        'P1 Spirit'="$($p1stats.spirit)"
+        'P1 Gold'="$($p1stats.gold)"
+        'P1 Magic'="$($p1stats.magic)"
+        'P1 Prestige'="$($p1stats.prestige)"
+        'P1 Rot'="$($p1stats.rot)"
+        'P2 Steam ID'="$($p2state.playerID)"
+        'P2 Init Type'="$($p2hero.playerType)"
+        'P2 End Type'="$($p2state.playerType)"
+        'P2 Hero'="$($p2hero.heroName)"
+        'P2 Hero Skin'="$($p2hero.heroSkin)"
+        'P2 Dice Skin'="$($p2hero.diceSkin)"
+        'P2 Amulet'="$($p2hero.amulet)"
+        'P2 Ring'="$($p2hero.signet)"
+        'P2 Fight'="$($p2stats.fight)"
+        'P2 Health'="$($p2stats.health)"
+        'P2 Body'="$($p2stats.body)"
+        'P2 Wits'="$($p2stats.wits)"
+        'P2 Spirit'="$($p2stats.spirit)"
+        'P2 Gold'="$($p2stats.gold)"
+        'P2 Magic'="$($p2stats.magic)"
+        'P2 Prestige'="$($p2stats.prestige)"
+        'P2 Rot'="$($p2stats.rot)"
+        'P3 Steam ID'="$($p3state.playerID)"
+        'P3 Init Type'="$($p3hero.playerType)"
+        'P3 End Type'="$($p3state.playerType)"
+        'P3 Hero'="$($p3hero.heroName)"
+        'P3 Hero Skin'="$($p3hero.heroSkin)"
+        'P3 Dice Skin'="$($p3hero.diceSkin)"
+        'P3 Amulet'="$($p3hero.amulet)"
+        'P3 Ring'="$($p3hero.signet)"
+        'P3 Fight'="$($p3stats.fight)"
+        'P3 Health'="$($p3stats.health)"
+        'P3 Body'="$($p3stats.body)"
+        'P3 Wits'="$($p3stats.wits)"
+        'P3 Spirit'="$($p3stats.spirit)"
+        'P3 Gold'="$($p3stats.gold)"
+        'P3 Magic'="$($p3stats.magic)"
+        'P3 Prestige'="$($p3stats.prestige)"
+        'P3 Rot'="$($p3stats.rot)"
+        'P4 Steam ID'="$($p4state.playerID)"
+        'P4 Init Type'="$($p4hero.playerType)"
+        'P4 End Type'="$($p4state.playerType)"
+        'P4 Hero'="$($p4hero.heroName)"
+        'P4 Hero Skin'="$($p4hero.heroSkin)"
+        'P4 Dice Skin'="$($p4hero.diceSkin)"
+        'P4 Amulet'="$($p4hero.amulet)"
+        'P4 Ring'="$($p4hero.signet)"
+        'P4 Fight'="$($p4stats.fight)"
+        'P4 Health'="$($p4stats.health)"
+        'P4 Body'="$($p4stats.body)"
+        'P4 Wits'="$($p4stats.wits)"
+        'P4 Spirit'="$($p4stats.spirit)"
+        'P4 Gold'="$($p4stats.gold)"
+        'P4 Magic'="$($p4stats.magic)"
+        'P4 Prestige'="$($p4stats.prestige)"
+        'P4 Rot'="$($p4stats.rot)"
+        })
+
+    $progress++
+    Write-Progress -Activity "Analyzing..." -Status "$([math]::Round($progress/$raw.count*100))% Complete" -PercentComplete $([math]::Round($progress/$raw.count*100));
+
+}
+
+$table | ConvertTo-CSV -NoTypeInformation | Set-Content "$curdir\StratAssist_$($curtime).csv"
+
+ForEach($t in $table)
+{
+
+    $compare.add([pscustomobject]@{
+        'multicomplete'=[int]$($t.'Match Mode' -match 'P' -and $t.'Local Outcome' -ne 'DidNotFinish')
+        'multiwon'=[int]$($t.'Match Mode' -match 'P' -and $t.'Local Outcome' -eq 'Won')
+        'multilost'=[int]$($t.'Match Mode' -match 'P' -and $t.'Local Outcome' -eq 'Lost')
+        'singlecomplete'=[int]$($t.'Game Mode' -eq 'Singleplayer' -and $t.'Local Outcome' -ne 'DidNotFinish')
+        'singlewon'=[int]$($t.'Game Mode' -eq 'Singleplayer' -and $t.'Local Outcome' -eq 'Won')
+        'singlelost'=[int]$($t.'Game Mode' -eq 'Singleplayer' -and $t.'Local Outcome' -eq 'Lost')
+    })
+
+}
+
+$multi.add([pscustomobject]@{
+    'Multiplayer Games Completed'=$compare.multicomplete | Measure-Object -sum | Select-Object -expand Sum
+    'Multiplayer Games Won'=$compare.multiwon | Measure-Object -sum | Select-Object -expand Sum
+    'Multiplayer Games Lost'=$compare.multilost | Measure-Object -sum | Select-Object -expand Sum
+    'Multiplayer Win Rate'=$($($compare.multiwon | Measure-Object -sum | Select-Object -expand Sum)/$($compare.multicomplete | Measure-Object -sum | Select-Object -expand Sum)).tostring("P")
+})
+
+$single.add([pscustomobject]@{
+    'Singleplayer Games Completed'=$compare.singlecomplete | Measure-Object -sum | Select-Object -expand Sum
+    'Singleplayer Games Won'=$compare.singlewon | Measure-Object -sum | Select-Object -expand Sum
+    'Singleplayer Games Lost'=$compare.singlelost | Measure-Object -sum | Select-Object -expand Sum
+    'Singleplayer Win Rate'=$($($compare.singlewon | Measure-Object -sum | Select-Object -expand Sum)/$($compare.singlecomplete | Measure-Object -sum | Select-Object -expand Sum)).tostring("P")
+})
+
+$multi | Format-Table
+
+$single | Format-Table
+
+Write-Host "`nResults Saved To $curdir\StratAssist_$($curtime).csv"
+pause
