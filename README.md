@@ -15,7 +15,7 @@ A PowerShell window will open, drag and drop StratAssist.ps1 into the window and
 
 On execution, StratAssist will locate Armello's log folder to begin reading the log files. Upon completion, it will calculate and display local game statistics. These include the win rate and number of games played, won, and lost.
 
-StratAssist will also output a CSV spreadsheet containing data from all compatible logged online multiplayer games. The spreadsheet includes:
+StratAssist will also output a CSV spreadsheet containing data from all compatible logged games. The spreadsheet includes:
 
 * Game Information (date, duration, and mode)
 * Board tile counts
