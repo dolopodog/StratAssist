@@ -3,7 +3,7 @@
 
 **Usage**
 
-Download the StratAssist zip, and extract the StratAssist-master folder to a location of your choice (Avoid directories with spaces in their names to make the following steps easier)
+Download the StratAssist zip, and extract the StratAssist-master folder to a location of your choice (Avoid directories with spaces in their names to make the following step easier)
 
 Double click StratAssist.bat
 
