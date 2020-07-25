@@ -21,4 +21,5 @@ StratAssist will also output a CSV spreadsheet containing data from all compatib
 **Your Armello Games Visualized**
 
 Thanks to Toxic Toast, StratAssist's output can now be viewed graphically. For more info, visit their tool here:
+
 https://daikoro.shinyapps.io/ArmelloStats/
